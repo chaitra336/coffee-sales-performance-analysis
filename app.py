@@ -16,7 +16,7 @@ The goal is to support better decision-making in staffing, operations, and sales
 
 
 # Load dataset
-df = pd.read_csv("coffee_sales_cleaned.csv", sep=",")
+df = pd.read_csv("coffee_sales_cleaned.csv", sep=",", engine="python")
 
 # Convert transaction_time to datetime
 df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")

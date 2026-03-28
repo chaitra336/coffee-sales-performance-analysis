@@ -5,4 +5,4 @@ seaborn
 streamlit
 plotly
 openpyxl
-
+altair

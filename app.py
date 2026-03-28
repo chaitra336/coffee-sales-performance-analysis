@@ -16,7 +16,7 @@ The goal is to support better decision-making in staffing, operations, and sales
 
 
 # Load dataset
-df = df = pd.read_excel("coffee_sales_cleaned(1).xls")
+df = df = pd.read_excel("coffee_sales_cleaned (1).xls")
 
 # Convert transaction_time to datetime
 df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")

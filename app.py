@@ -27,6 +27,13 @@ df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
 # Extract hour
 df["hour"] = df["transaction_time"].dt.hour
 
+df["time_bucket"] = pd.cut(
+    df["hour"],
+    bins=[0,6,12,18,24],
+    labels=["Night","Morning","Afternoon","Evening"],
+    right=False
+)
+
 # Extract day name
 df["day_of_week"] = np.tile(
     ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],

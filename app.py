@@ -14,41 +14,23 @@ st.write("File exists:", os.path.exists("coffee_sales_cleaned.csv"))
 if os.path.exists("coffee_sales_cleaned.csv"):
     st.write("File size:", os.path.getsize("coffee_sales_cleaned.csv"))
 # -------------------------
-# LOAD DATA (FINAL STABLE)
+# LOAD DATA (FINAL)
 # -------------------------
-df = pd.read_csv("coffee_sales_cleaned.csv", encoding="utf-8-sig")
-
-# clean column names completely
-df.columns = (
-    df.columns
-    .str.strip()
-    .str.lower()
-    .str.replace(" ", "_")
+df = pd.read_csv(
+    "coffee_sales_cleaned.csv",
+    sep=None,
+    engine="python"
 )
 
-# verify columns exist (prevents KeyError)
-required_cols = ["transaction_time", "transaction_qty", "unit_price"]
-for col in required_cols:
-    if col not in df.columns:
-        st.error(f"Missing column: {col}")
-        st.stop()
+st.write("Columns detected:", df.columns)
+st.dataframe(df.head())
 
-# datetime conversion
 df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
 
-# feature engineering
 df["hour"] = df["transaction_time"].dt.hour
 df["day_of_week"] = df["transaction_time"].dt.day_name()
 
-# revenue
 df["revenue"] = df["transaction_qty"] * df["unit_price"]
-
-# time bucket (no substring logic)
-df["time_bucket"] = pd.cut(
-    df["hour"],
-    bins=[-1,5,11,16,21,24],
-    labels=["Late Night","Morning","Afternoon","Evening","Late Night"]
-)
 # -------------------------
 # FEATURE ENGINEERING
 # -------------------------

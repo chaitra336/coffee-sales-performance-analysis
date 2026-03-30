@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 st.set_page_config(layout="wide")
 
 st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
+import os
 
+st.write("Files in directory:", os.listdir())
 # -------------------------
 # LOAD DATA (FINAL STABLE)
 # -------------------------

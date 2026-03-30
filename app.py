@@ -6,70 +6,54 @@ import matplotlib.pyplot as plt
 st.set_page_config(layout="wide")
 
 st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
-import os
-
-st.write("Files in directory:", os.listdir())
-st.write("File exists:", os.path.exists("coffee_sales_cleaned.csv"))
-
-if os.path.exists("coffee_sales_cleaned.csv"):
-    st.write("File size:", os.path.getsize("coffee_sales_cleaned.csv"))
 # -------------------------
-# SAFE CLEANING 
+# LOAD + CLEAN DATA (FULL FIX)
 # -------------------------
+file_path = "coffee_sales_cleaned.csv"
 
-# standardize column names
+df = pd.read_csv(
+    file_path,
+    sep=",",
+    encoding="utf-8",
+    engine="python",
+    on_bad_lines="skip"
+)
+
+# clean column names
 df.columns = df.columns.str.strip().str.lower()
 
-# rename possible variants
+# rename variants
 df = df.rename(columns={
     "transaction time": "transaction_time",
-    "transaction date": "transaction_date",
     "transaction qty": "transaction_qty",
-    "qty": "transaction_qty",
     "unit price": "unit_price",
     "store": "store_location",
     "product": "product_type"
 })
 
-# ensure required columns exist
-required_cols = [
-    "transaction_time",
-    "transaction_qty",
-    "unit_price",
-    "store_location",
-    "product_type"
-]
+# ensure columns exist
+if "transaction_time" not in df.columns:
+    df["transaction_time"] = pd.NaT
 
-for col in required_cols:
-    if col not in df.columns:
-        df[col] = np.nan
+if "transaction_qty" not in df.columns:
+    df["transaction_qty"] = 0
 
-# convert datetime safely
-df["transaction_time"] = pd.to_datetime(
-    df["transaction_time"],
-    errors="coerce"
-)
+if "unit_price" not in df.columns:
+    df["unit_price"] = 0
 
-# numeric conversions
+# convert types
+df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
 df["transaction_qty"] = pd.to_numeric(df["transaction_qty"], errors="coerce").fillna(0)
 df["unit_price"] = pd.to_numeric(df["unit_price"], errors="coerce").fillna(0)
 
-# feature engineering
+# features
 df["hour"] = df["transaction_time"].dt.hour.fillna(0)
 df["day_of_week"] = df["transaction_time"].dt.day_name().fillna("Unknown")
 
 # revenue
 df["revenue"] = df["transaction_qty"] * df["unit_price"]
-# -------------------------
-# FEATURE ENGINEERING
-# -------------------------
-df["hour"] = df["transaction_time"].dt.hour
-df["day_of_week"] = df["transaction_time"].dt.day_name()
 
-# Revenue
-df["revenue"] = df["transaction_qty"] * df["unit_price"]
-
-# Time bucket
+# time bucket
 def time_bucket(hour):
     if 6 <= hour <= 11:
         return "Morning"
@@ -81,6 +65,7 @@ def time_bucket(hour):
         return "Late Night"
 
 df["time_bucket"] = df["hour"].apply(time_bucket)
+
 
 # -------------------------
 # SIDEBAR FILTERS

@@ -3,53 +3,56 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Coffee Sales Dashboard", layout="wide")
+st.set_page_config(layout="wide")
 
-st.title("Afficionado Coffee Roasters - Sales Trend Dashboard")
+st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
 
-# -----------------------------
-# LOAD DATA
-# -----------------------------
-@st.cache_data
-def load_data():
-    df = pd.read_csv("coffee_sales_cleaned.csv")
+# -------------------------
+# LOAD DATA 
+# -------------------------
+df = pd.read_csv("coffee_sales_cleaned.csv")
 
-    # Clean column names
-    df.columns = df.columns.str.strip().str.lower()
+# Clean column names
+df.columns = df.columns.str.strip().str.lower()
 
-    # Convert time column safely
-    df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
+# Rename if needed (handles your error)
+if "transaction_time" not in df.columns:
+    for col in df.columns:
+        if "time" in col:
+            df.rename(columns={col: "transaction_time"}, inplace=True)
 
-    # Feature engineering
-    df["hour"] = df["transaction_time"].dt.hour
-    df["day_of_week"] = df["transaction_time"].dt.day_name()
+# Convert to datetime
+df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
 
-    df["revenue"] = df["transaction_qty"] * df["unit_price"]
+# -------------------------
+# FEATURE ENGINEERING
+# -------------------------
+df["hour"] = df["transaction_time"].dt.hour
+df["day_of_week"] = df["transaction_time"].dt.day_name()
 
-    # Time bucket
-    def bucket(x):
-        if 6 <= x <= 11:
-            return "Morning"
-        elif 12 <= x <= 16:
-            return "Afternoon"
-        elif 17 <= x <= 21:
-            return "Evening"
-        else:
-            return "Late Night"
+# Revenue
+df["revenue"] = df["transaction_qty"] * df["unit_price"]
 
-    df["time_bucket"] = df["hour"].apply(bucket)
+# Time bucket
+def time_bucket(hour):
+    if 6 <= hour <= 11:
+        return "Morning"
+    elif 12 <= hour <= 16:
+        return "Afternoon"
+    elif 17 <= hour <= 21:
+        return "Evening"
+    else:
+        return "Late Night"
 
-    return df
+df["time_bucket"] = df["hour"].apply(time_bucket)
 
-df = load_data()
-
-# -----------------------------
+# -------------------------
 # SIDEBAR FILTERS
-# -----------------------------
+# -------------------------
 st.sidebar.header("Filters")
 
 store = st.sidebar.multiselect(
-    "Select Store Location",
+    "Select Store",
     df["store_location"].unique(),
     default=df["store_location"].unique()
 )
@@ -70,9 +73,9 @@ filtered_df = df[
     (df["hour"] <= hour_range[1])
 ]
 
-# -----------------------------
-# KPIs
-# -----------------------------
+# -------------------------
+# KPI SECTION
+# -------------------------
 st.subheader("Key Performance Indicators")
 
 col1, col2, col3, col4 = st.columns(4)
@@ -89,21 +92,30 @@ col3.metric("Total Quantity Sold", total_qty)
 avg_order_value = total_revenue / total_transactions
 col4.metric("Avg Order Value", f"₹{avg_order_value:,.2f}")
 
-# -----------------------------
-# CHARTS
-# -----------------------------
+# -------------------------
+# REVENUE BY STORE
+# -------------------------
 st.subheader("Revenue by Store Location")
-store_sales = filtered_df.groupby("store_location")["revenue"].sum()
+store_sales = filtered_df.groupby("store_location")[metric].sum()
 st.bar_chart(store_sales)
 
+# -------------------------
+# REVENUE BY HOUR
+# -------------------------
 st.subheader("Revenue by Hour")
-hour_sales = filtered_df.groupby("hour")["revenue"].sum()
+hour_sales = filtered_df.groupby("hour")[metric].sum()
 st.line_chart(hour_sales)
 
+# -------------------------
+# TIME BUCKET
+# -------------------------
 st.subheader("Revenue by Time of Day")
-time_sales = filtered_df.groupby("time_bucket")["revenue"].sum()
+time_sales = filtered_df.groupby("time_bucket")[metric].sum()
 st.bar_chart(time_sales)
 
+# -------------------------
+# TOP PRODUCTS
+# -------------------------
 st.subheader("Top 10 Products by Revenue")
 top_products = (
     filtered_df.groupby("product_type")["revenue"]
@@ -113,18 +125,17 @@ top_products = (
 )
 st.bar_chart(top_products)
 
+# -------------------------
+# DAY OF WEEK
+# -------------------------
 st.subheader("Revenue by Day of Week")
-day_sales = filtered_df.groupby("day_of_week")["revenue"].sum()
+day_sales = filtered_df.groupby("day_of_week")[metric].sum()
 st.bar_chart(day_sales)
 
-st.subheader("Metric Comparison by Store")
-metric_sales = filtered_df.groupby("store_location")[metric].sum()
-st.bar_chart(metric_sales)
-
-# -----------------------------
+# -------------------------
 # HEATMAP
-# -----------------------------
-st.subheader("Hourly Sales Heatmap")
+# -------------------------
+st.subheader("Hourly Sales Heatmap (Day vs Hour)")
 
 heatmap_data = filtered_df.pivot_table(
     values="revenue",

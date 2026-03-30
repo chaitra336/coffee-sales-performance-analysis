@@ -9,6 +9,10 @@ st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
 import os
 
 st.write("Files in directory:", os.listdir())
+st.write("File exists:", os.path.exists("coffee_sales_cleaned.csv"))
+
+if os.path.exists("coffee_sales_cleaned.csv"):
+    st.write("File size:", os.path.getsize("coffee_sales_cleaned.csv"))
 # -------------------------
 # LOAD DATA (FINAL STABLE)
 # -------------------------

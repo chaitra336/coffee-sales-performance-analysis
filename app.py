@@ -14,23 +14,50 @@ st.write("File exists:", os.path.exists("coffee_sales_cleaned.csv"))
 if os.path.exists("coffee_sales_cleaned.csv"):
     st.write("File size:", os.path.getsize("coffee_sales_cleaned.csv"))
 # -------------------------
-# LOAD DATA (FINAL)
+# LOAD DATA
 # -------------------------
+import os
+
+file_path = "coffee_sales_cleaned.csv"
+
+# Debug info (keep this)
+st.write("File exists:", os.path.exists(file_path))
+st.write("File size:", os.path.getsize(file_path))
+
+# Read CSV safely
 df = pd.read_csv(
-    "coffee_sales_cleaned.csv",
-    sep=None,
-    engine="python"
+    file_path,
+    sep=",",
+    encoding="utf-8",
+    engine="python",
+    on_bad_lines="skip"
 )
 
-st.write("Columns detected:", df.columns)
-st.dataframe(df.head())
+# Strip spaces from column names
+df.columns = df.columns.str.strip()
 
-df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
+# Show columns to confirm
+st.write("Columns detected:", df.columns.tolist())
 
-df["hour"] = df["transaction_time"].dt.hour
-df["day_of_week"] = df["transaction_time"].dt.day_name()
+# Convert datetime safely
+if "transaction_time" in df.columns:
+    df["transaction_time"] = pd.to_datetime(
+        df["transaction_time"],
+        errors="coerce"
+    )
 
-df["revenue"] = df["transaction_qty"] * df["unit_price"]
+# Create hour
+if "transaction_time" in df.columns:
+    df["hour"] = df["transaction_time"].dt.hour
+
+# Day name
+if "transaction_time" in df.columns:
+    df["day_of_week"] = df["transaction_time"].dt.day_name()
+
+# Revenue
+if "revenue" not in df.columns:
+    if "transaction_qty" in df.columns and "unit_price" in df.columns:
+        df["revenue"] = df["transaction_qty"] * df["unit_price"]
 # -------------------------
 # FEATURE ENGINEERING
 # -------------------------

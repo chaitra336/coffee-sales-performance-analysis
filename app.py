@@ -14,14 +14,10 @@ It helps identify peak hours, busiest days, and high-performing store locations.
 The goal is to support better decision-making in staffing, operations, and sales strategy using data-driven insights.
 """)
 
-
-# Load dataset
-df = pd.read_csv("coffee_sales_cleaned.csv")
-
-# Clean column names
+#load dataset
+df = pd.read_csv("coffee_sales_cleaned.csv", encoding="utf-8-sig")
 df.columns = df.columns.str.strip()
 
-# Convert transaction_time to datetime
 df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
 
 # Extract hour

@@ -8,18 +8,21 @@ st.set_page_config(layout="wide")
 st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
 
 # -------------------------
-# LOAD DATA 
-# -------------------------
-# -------------------------
-# LOAD DATA (FINAL SAFE)
+# LOAD DATA (SAFE FINAL)
 # -------------------------
 df = pd.read_csv("coffee_sales_cleaned.csv")
 
-# Convert time safely
-df["transaction_time"] = pd.to_datetime(
-    df["transaction_time"],
-    errors="coerce"
-)
+# Force column names clean
+df.columns = df.columns.str.strip()
+
+# Access safely
+transaction_col = [c for c in df.columns if "transaction_time" in c][0]
+
+# Convert datetime
+df[transaction_col] = pd.to_datetime(df[transaction_col], errors="coerce")
+
+# Rename to standard name
+df.rename(columns={transaction_col: "transaction_time"}, inplace=True)
 
 # Create features
 df["hour"] = df["transaction_time"].dt.hour
@@ -27,14 +30,6 @@ df["day_of_week"] = df["transaction_time"].dt.day_name()
 
 # Revenue
 df["revenue"] = df["transaction_qty"] * df["unit_price"]
-
-# Time bucket
-df["time_bucket"] = pd.cut(
-    df["hour"],
-    bins=[-1,5,11,16,21,24],
-    labels=["Late Night","Morning","Afternoon","Evening","Late Night"]
-)
-
 # -------------------------
 # FEATURE ENGINEERING
 # -------------------------

@@ -8,38 +8,41 @@ st.set_page_config(layout="wide")
 st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
 
 # -------------------------
-# LOAD DATA 
+# LOAD DATA (FINAL STABLE)
 # -------------------------
-df = pd.read_csv("coffee_sales_cleaned.csv")
+df = pd.read_csv("coffee_sales_cleaned.csv", encoding="utf-8-sig")
 
-# force lowercase
-df.columns = [c.lower().strip() for c in df.columns]
+# clean column names completely
+df.columns = (
+    df.columns
+    .str.strip()
+    .str.lower()
+    .str.replace(" ", "_")
+)
 
-# map columns safely
-col_map = {
-    "transaction_id": None,
-    "transaction_time": None,
-    "transaction_qty": None,
-    "unit_price": None,
-    "store_location": None,
-    "product_type": None
-}
+# verify columns exist (prevents KeyError)
+required_cols = ["transaction_time", "transaction_qty", "unit_price"]
+for col in required_cols:
+    if col not in df.columns:
+        st.error(f"Missing column: {col}")
+        st.stop()
 
-for col in df.columns:
-    for key in col_map.keys():
-        if key in col:
-            col_map[key] = col
-
-# rename safely
-df.rename(columns={v: k for k, v in col_map.items() if v is not None}, inplace=True)
-
-# now safe operations
+# datetime conversion
 df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
 
+# feature engineering
 df["hour"] = df["transaction_time"].dt.hour
 df["day_of_week"] = df["transaction_time"].dt.day_name()
 
+# revenue
 df["revenue"] = df["transaction_qty"] * df["unit_price"]
+
+# time bucket (no substring logic)
+df["time_bucket"] = pd.cut(
+    df["hour"],
+    bins=[-1,5,11,16,21,24],
+    labels=["Late Night","Morning","Afternoon","Evening","Late Night"]
+)
 # -------------------------
 # FEATURE ENGINEERING
 # -------------------------

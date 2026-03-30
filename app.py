@@ -10,28 +10,30 @@ st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
 # -------------------------
 # LOAD DATA 
 # -------------------------
-df = pd.read_csv(
-    "coffee_sales_cleaned.csv",
-    sep=",",
-    encoding="utf-8",
-    engine="python"
-)
+# -------------------------
+# LOAD DATA (FINAL SAFE)
+# -------------------------
+df = pd.read_csv("coffee_sales_cleaned.csv")
 
-df = df.dropna(how="all")
-df = df.dropna(axis=1, how="all")
-
+# Convert time safely
 df["transaction_time"] = pd.to_datetime(
     df["transaction_time"],
-    format="%Y-%m-%d %H:%M:%S",
     errors="coerce"
 )
 
+# Create features
 df["hour"] = df["transaction_time"].dt.hour
 df["day_of_week"] = df["transaction_time"].dt.day_name()
 
+# Revenue
 df["revenue"] = df["transaction_qty"] * df["unit_price"]
 
-
+# Time bucket
+df["time_bucket"] = pd.cut(
+    df["hour"],
+    bins=[-1,5,11,16,21,24],
+    labels=["Late Night","Morning","Afternoon","Evening","Late Night"]
+)
 
 # -------------------------
 # FEATURE ENGINEERING

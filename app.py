@@ -10,19 +10,28 @@ st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
 # -------------------------
 # LOAD DATA 
 # -------------------------
-df = pd.read_csv("coffee_sales_cleaned.csv")
+df = pd.read_csv(
+    "coffee_sales_cleaned.csv",
+    sep=",",
+    encoding="utf-8",
+    engine="python"
+)
 
-# Clean column names
-df.columns = df.columns.str.strip().str.lower()
+df = df.dropna(how="all")
+df = df.dropna(axis=1, how="all")
 
-# Rename if needed (handles your error)
-if "transaction_time" not in df.columns:
-    for col in df.columns:
-        if "time" in col:
-            df.rename(columns={col: "transaction_time"}, inplace=True)
+df["transaction_time"] = pd.to_datetime(
+    df["transaction_time"],
+    format="%Y-%m-%d %H:%M:%S",
+    errors="coerce"
+)
 
-# Convert to datetime
-df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
+df["hour"] = df["transaction_time"].dt.hour
+df["day_of_week"] = df["transaction_time"].dt.day_name()
+
+df["revenue"] = df["transaction_qty"] * df["unit_price"]
+
+
 
 # -------------------------
 # FEATURE ENGINEERING

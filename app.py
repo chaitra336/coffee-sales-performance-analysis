@@ -8,27 +8,37 @@ st.set_page_config(layout="wide")
 st.title("☕ Afficionado Coffee Roasters - Sales Dashboard")
 
 # -------------------------
-# LOAD DATA (SAFE FINAL)
+# LOAD DATA 
 # -------------------------
 df = pd.read_csv("coffee_sales_cleaned.csv")
 
-# Force column names clean
-df.columns = df.columns.str.strip()
+# force lowercase
+df.columns = [c.lower().strip() for c in df.columns]
 
-# Access safely
-transaction_col = [c for c in df.columns if "transaction_time" in c][0]
+# map columns safely
+col_map = {
+    "transaction_id": None,
+    "transaction_time": None,
+    "transaction_qty": None,
+    "unit_price": None,
+    "store_location": None,
+    "product_type": None
+}
 
-# Convert datetime
-df[transaction_col] = pd.to_datetime(df[transaction_col], errors="coerce")
+for col in df.columns:
+    for key in col_map.keys():
+        if key in col:
+            col_map[key] = col
 
-# Rename to standard name
-df.rename(columns={transaction_col: "transaction_time"}, inplace=True)
+# rename safely
+df.rename(columns={v: k for k, v in col_map.items() if v is not None}, inplace=True)
 
-# Create features
+# now safe operations
+df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
+
 df["hour"] = df["transaction_time"].dt.hour
 df["day_of_week"] = df["transaction_time"].dt.day_name()
 
-# Revenue
 df["revenue"] = df["transaction_qty"] * df["unit_price"]
 # -------------------------
 # FEATURE ENGINEERING

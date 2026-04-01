@@ -22,7 +22,11 @@ df = pd.read_csv("coffee_sales.csv")
 
 # ================= DATA PREPARATION =================
 df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
+# Create proper day of week
+df["day_of_week"] = pd.to_datetime(df["transaction_time"]).dt.day_name()
 
+day_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+df["day_of_week"] = pd.Categorical(df["day_of_week"], categories=day_order, ordered=True)
 # Create revenue if not present
 if "revenue" not in df.columns:
     df["revenue"] = df["transaction_qty"] * df["unit_price"]

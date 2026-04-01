@@ -21,12 +21,21 @@ The goal is to support better decision-making in staffing, operations, and sales
 df = pd.read_csv("coffee_sales.csv")
 
 # ================= DATA PREPARATION =================
-df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
-# Create proper day of week
-df["day_of_week"] = pd.to_datetime(df["transaction_time"]).dt.day_name()
+df["transaction_time"] = pd.to_datetime(
+    df["transaction_time"],
+    format="mixed",
+    errors="coerce"
+)
+# day of week
+# Extract day name
+df["day_of_week"] = np.tile(
+    ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    len(df)//7 + 1
+)[:len(df)]
 
 day_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 df["day_of_week"] = pd.Categorical(df["day_of_week"], categories=day_order, ordered=True)
+
 # Create revenue if not present
 if "revenue" not in df.columns:
     df["revenue"] = df["transaction_qty"] * df["unit_price"]
@@ -41,12 +50,6 @@ df["time_bucket"] = pd.cut(
     labels=["Night","Morning","Afternoon","Evening"],
     right=False
 )
-
-# Day of week
-df["day_of_week"] = df["transaction_time"].dt.day_name()
-
-day_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
-df["day_of_week"] = pd.Categorical(df["day_of_week"], categories=day_order, ordered=True)
 
 # ================= SIDEBAR FILTERS =================
 st.sidebar.header("Filters")

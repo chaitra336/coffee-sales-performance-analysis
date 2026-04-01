@@ -20,17 +20,17 @@ The goal is to support better decision-making in staffing, operations, and sales
 # ================= LOAD DATA =================
 df = pd.read_csv("coffee_sales.csv")
 
-df.columns = [
-    "transaction_id","year","transaction_time","transaction_qty",
-    "store_id","store_location","product_id","unit_price",
-    "product_category","product_type","product_detail",
-    "revenue","hour","time_bucket"
-]
-
-# ================= DATA PREP =================
+# ================= DATA PREPARATION =================
 df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
+
+# Create revenue if not present
+if "revenue" not in df.columns:
+    df["revenue"] = df["transaction_qty"] * df["unit_price"]
+
+# Extract hour
 df["hour"] = df["transaction_time"].dt.hour
 
+# Time bucket
 df["time_bucket"] = pd.cut(
     df["hour"],
     bins=[0,6,12,18,24],
@@ -38,6 +38,7 @@ df["time_bucket"] = pd.cut(
     right=False
 )
 
+# Day of week
 df["day_of_week"] = df["transaction_time"].dt.day_name()
 
 day_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
@@ -48,7 +49,7 @@ st.sidebar.header("Filters")
 
 store = st.sidebar.selectbox(
     "Select Store Location",
-    ["All"] + list(df["store_location"].unique())
+    ["All"] + sorted(df["store_location"].dropna().unique())
 )
 
 metric = st.sidebar.selectbox(
@@ -87,8 +88,7 @@ col2.metric("Total Transactions", total_transactions)
 col3.metric("Total Quantity Sold", total_qty)
 col4.metric("Avg Order Value", f"₹{avg_order_value:,.2f}")
 
-# ================= CHARTS =================
-
+# ================= CHART ROW 1 =================
 col1, col2 = st.columns(2)
 
 with col1:
@@ -101,6 +101,7 @@ with col2:
     day_sales = filtered_df.groupby("day_of_week")["revenue"].sum()
     st.bar_chart(day_sales)
 
+# ================= CHART ROW 2 =================
 col3, col4 = st.columns(2)
 
 with col3:
@@ -115,16 +116,19 @@ with col4:
 
 # ================= TOP PRODUCTS =================
 st.subheader("Top 10 Products by Revenue")
+
 top_products = (
     filtered_df.groupby("product_type")["revenue"]
     .sum()
     .sort_values(ascending=False)
     .head(10)
 )
+
 st.bar_chart(top_products)
 
 # ================= METRIC COMPARISON =================
 st.subheader("Metric Comparison by Store")
+
 metric_sales = filtered_df.groupby("store_location")[metric].sum()
 st.bar_chart(metric_sales)
 

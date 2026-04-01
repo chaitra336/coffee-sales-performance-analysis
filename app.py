@@ -167,3 +167,12 @@ ax.set_xlabel("Hour of Day")
 ax.set_ylabel("Day of Week")
 
 st.pyplot(fig)
+st.markdown(
+    """
+    <hr>
+    <p style='text-align: center; color: gray;'>
+        Created by <b>Chaitra Huralikuppi</b> | Coffee Sales Dashboard | 2026
+    </p>
+    """,
+    unsafe_allow_html=True
+)

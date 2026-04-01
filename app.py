@@ -73,7 +73,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --------- LOAD DATA ----------
-df = pd.read_csv("coffee_sales_cleaned.csv")
+df = pd.read_csv("coffee_sales.csv")
 
 # --------- DATA PREPARATION ----------
 df['transaction_time'] = pd.to_datetime(df['transaction_time'])

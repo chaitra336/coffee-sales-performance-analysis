@@ -135,6 +135,8 @@ st.bar_chart(metric_sales)
 # ================= HEATMAP =================
 st.subheader("Hourly Sales Heatmap (Day vs Hour)")
 
+day_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+
 heatmap_data = filtered_df.pivot_table(
     values="revenue",
     index="day_of_week",
@@ -142,7 +144,19 @@ heatmap_data = filtered_df.pivot_table(
     aggfunc="sum"
 )
 
-fig, ax = plt.subplots(figsize=(10,6))
-sns.heatmap(heatmap_data, cmap="YlOrRd", ax=ax)
+# Force all days to show
+heatmap_data = heatmap_data.reindex(day_order)
+
+fig, ax = plt.subplots(figsize=(12,6))
+sns.heatmap(
+    heatmap_data,
+    cmap="YlOrRd",
+    ax=ax,
+    linewidths=0.5,
+    linecolor="white"
+)
+
+ax.set_xlabel("Hour of Day")
+ax.set_ylabel("Day of Week")
 
 st.pyplot(fig)

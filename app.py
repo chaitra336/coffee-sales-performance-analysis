@@ -5,20 +5,9 @@ import plotly.express as px
 # --------- PAGE CONFIG ----------
 st.set_page_config(layout="wide", page_title="☕ Afficionado Coffee Roasters - Sales Analysis 2025")
 
-st.markdown("""
-### Sales Trend and Time-Based Performance Analysis  
-
-This dashboard analyzes coffee sales data to understand customer purchasing patterns across time.  
-It helps identify peak hours, busiest days, and high-performing store locations.
-
-The goal is to support better decision-making in staffing, operations, and sales strategy using data-driven insights.
-""")
-
-
 # Load dataset
-df = pd.read_csv("coffee_sales_cleaned.csv")
+df = pd.read_csv("coffee_sales.csv")
 
-# force column names (exact match to CSV)
 df.columns = [
     "transaction_id","year","transaction_time","transaction_qty",
     "store_id","store_location","product_id","unit_price",

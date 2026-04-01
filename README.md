@@ -73,7 +73,7 @@ coffee-sales-dashboard/
 
 1. Clone the repository
 ```
-git clone https://github.com/yourusername/coffee-sales-dashboard.git
+git clone https://github.com/chaitra336/coffee-sales-dashboard.git
 ```
 
 2. Navigate to project folder

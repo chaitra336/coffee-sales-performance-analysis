@@ -1,11 +1,23 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 
-# --------- PAGE CONFIG ----------
-st.set_page_config(layout="wide", page_title="☕ Afficionado Coffee Roasters - Sales Analysis 2025")
+st.set_page_config(layout="wide")
 
-# Load dataset
+st.title("☕ Coffee Sales Dashboard")
+
+st.markdown("""
+### Sales Trend and Time-Based Performance Analysis  
+
+This dashboard analyzes coffee sales data to understand customer purchasing patterns across time.  
+It helps identify peak hours, busiest days, and high-performing store locations.
+
+The goal is to support better decision-making in staffing, operations, and sales strategy using data-driven insights.
+""")
+
+# ================= LOAD DATA =================
 df = pd.read_csv("coffee_sales.csv")
 
 df.columns = [
@@ -15,13 +27,10 @@ df.columns = [
     "revenue","hour","time_bucket"
 ]
 
-# Convert transaction_time
+# ================= DATA PREP =================
 df["transaction_time"] = pd.to_datetime(df["transaction_time"], errors="coerce")
-
-# Extract hour (overwrite if needed)
 df["hour"] = df["transaction_time"].dt.hour
 
-# Create time bucket (overwrite)
 df["time_bucket"] = pd.cut(
     df["hour"],
     bins=[0,6,12,18,24],
@@ -29,15 +38,12 @@ df["time_bucket"] = pd.cut(
     right=False
 )
 
-# Extract day name
-df["day_of_week"] = np.tile(
-    ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
-    len(df)//7 + 1
-)[:len(df)]
+df["day_of_week"] = df["transaction_time"].dt.day_name()
 
 day_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 df["day_of_week"] = pd.Categorical(df["day_of_week"], categories=day_order, ordered=True)
-# ================= FILTER =================
+
+# ================= SIDEBAR FILTERS =================
 st.sidebar.header("Filters")
 
 store = st.sidebar.selectbox(
@@ -45,99 +51,94 @@ store = st.sidebar.selectbox(
     ["All"] + list(df["store_location"].unique())
 )
 
-if store == "All":
-    filtered_df = df
-else:
-    filtered_df = df[df["store_location"] == store]
-
-# ================= KPI CARDS =================
-st.subheader("Key Performance Indicators")
-
-col1, col2, col3, col4 = st.columns(4)
-
-total_revenue = df["revenue"].sum()
-col1.metric("Total Revenue", f"₹{total_revenue:,.0f}")
-
-total_transactions = df["transaction_id"].nunique()
-col2.metric("Total Transactions", total_transactions)
-
-total_qty = df["transaction_qty"].sum()
-col3.metric("Total Quantity Sold", total_qty)
-
-avg_order_value = total_revenue / total_transactions
-col4.metric("Avg Order Value", f"₹{avg_order_value:,.2f}")
-
-# Revenue by Store
-st.subheader("Revenue by Store Location")
-store_sales = filtered_df.groupby("store_location")["revenue"].sum()
-st.bar_chart(store_sales)
-
-# Revenue by Hour
-st.subheader("Revenue by Hour")
-hour_sales = filtered_df.groupby("hour")["revenue"].sum()
-st.line_chart(hour_sales)
-
-# Revenue by Time Bucket
-st.subheader("Revenue by Time of Day")
-time_sales = filtered_df.groupby("time_bucket")["revenue"].sum()
-st.bar_chart(time_sales)
-
-st.subheader("Top 10 Products by Revenue")
-top_products = filtered_df.groupby("product_type")["revenue"].sum().sort_values(ascending=False).head(10)
-st.bar_chart(top_products)
-
-st.subheader("Revenue by Day of Week")
-day_sales = filtered_df.groupby("day_of_week")["revenue"].sum()
-st.bar_chart(day_sales)
-
-
-st.subheader("Filtered Revenue by Hour")
-
-filtered_hour_sales = filtered_df.groupby("hour")["revenue"].sum()
-st.line_chart(filtered_hour_sales)
-
 metric = st.sidebar.selectbox(
     "Select Metric",
     ["revenue", "transaction_qty"]
 )
-
-st.subheader("Metric Comparison by Store")
-
-metric_sales = filtered_df.groupby("store_location")[metric].sum()
-st.bar_chart(metric_sales)
 
 hour_range = st.sidebar.slider(
     "Select Hour Range",
     0, 23, (6, 20)
 )
 
-filtered_hours = df[
-    (df["hour"] >= hour_range[0]) &
-    (df["hour"] <= hour_range[1])
+# ================= FILTER DATA =================
+filtered_df = df.copy()
+
+if store != "All":
+    filtered_df = filtered_df[filtered_df["store_location"] == store]
+
+filtered_df = filtered_df[
+    (filtered_df["hour"] >= hour_range[0]) &
+    (filtered_df["hour"] <= hour_range[1])
 ]
 
-st.subheader("Revenue in Selected Hour Range")
+# ================= KPI CARDS =================
+st.subheader("Key Performance Indicators")
 
-range_sales = filtered_hours.groupby("hour")["revenue"].sum()
-st.line_chart(range_sales)
+col1, col2, col3, col4 = st.columns(4)
 
-import seaborn as sns
-import matplotlib.pyplot as plt
+total_revenue = filtered_df["revenue"].sum()
+total_transactions = filtered_df["transaction_id"].nunique()
+total_qty = filtered_df["transaction_qty"].sum()
+avg_order_value = total_revenue / total_transactions if total_transactions else 0
+
+col1.metric("Total Revenue", f"₹{total_revenue:,.0f}")
+col2.metric("Total Transactions", total_transactions)
+col3.metric("Total Quantity Sold", total_qty)
+col4.metric("Avg Order Value", f"₹{avg_order_value:,.2f}")
+
+# ================= CHARTS =================
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Revenue by Store Location")
+    store_sales = filtered_df.groupby("store_location")["revenue"].sum()
+    st.bar_chart(store_sales)
+
+with col2:
+    st.subheader("Revenue by Day of Week")
+    day_sales = filtered_df.groupby("day_of_week")["revenue"].sum()
+    st.bar_chart(day_sales)
+
+col3, col4 = st.columns(2)
+
+with col3:
+    st.subheader("Revenue by Hour")
+    hour_sales = filtered_df.groupby("hour")["revenue"].sum()
+    st.line_chart(hour_sales)
+
+with col4:
+    st.subheader("Revenue by Time of Day")
+    time_sales = filtered_df.groupby("time_bucket")["revenue"].sum()
+    st.bar_chart(time_sales)
+
+# ================= TOP PRODUCTS =================
+st.subheader("Top 10 Products by Revenue")
+top_products = (
+    filtered_df.groupby("product_type")["revenue"]
+    .sum()
+    .sort_values(ascending=False)
+    .head(10)
+)
+st.bar_chart(top_products)
+
+# ================= METRIC COMPARISON =================
+st.subheader("Metric Comparison by Store")
+metric_sales = filtered_df.groupby("store_location")[metric].sum()
+st.bar_chart(metric_sales)
+
+# ================= HEATMAP =================
 st.subheader("Hourly Sales Heatmap (Day vs Hour)")
 
-# Create pivot table
-heatmap_data = df.pivot_table(
+heatmap_data = filtered_df.pivot_table(
     values="revenue",
     index="day_of_week",
     columns="hour",
     aggfunc="sum"
 )
 
-# Create heatmap
 fig, ax = plt.subplots(figsize=(10,6))
 sns.heatmap(heatmap_data, cmap="YlOrRd", ax=ax)
 
 st.pyplot(fig)
-# --------- FOOTER ----------
-st.markdown("---")
-st.caption("Dashboard created for Afficionado Coffee Roasters | Internship Project")
